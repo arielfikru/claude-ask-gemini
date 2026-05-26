@@ -61,6 +61,8 @@ ask-gemini "explain the CAP theorem in 3 sentences"   # plain text works too
 | Flag | Meaning |
 | ---- | ------- |
 | `-f FILE` | media/file to analyze (image, video, doc); **repeatable** |
+| `--flash` | fast/cheap model (`gemini-3-flash-preview`) |
+| `--pro` | most capable model (`gemini-3.1-pro-preview`, the default) |
 | `-m MODEL` | explicit Gemini model name |
 | `-c N` | self-consistency: sample N, majority-vote (see below) |
 | `--timeout N` | seconds before giving up (default 300, env `GEMINI_TIMEOUT`) |
@@ -69,6 +71,19 @@ ask-gemini "explain the CAP theorem in 3 sentences"   # plain text works too
 
 Prompt comes from args and/or piped stdin. Media is referenced by Gemini's
 native multimodal read — no OCR/transcoding step.
+
+### Picking the model
+
+Default is **pro** — best for tricky reads (subtle UI bugs, dense diagrams,
+fine detail). Use `--flash` for bulk or simple reads (obvious content, large
+batches): faster and cheaper, and a sensible default for `ask-gemini-batch`.
+`-m` takes any explicit model name (e.g. `gemini-2.5-flash`, `gemini-2.5-pro`).
+
+```bash
+ask-gemini --flash -f thumb.jpg "is there text in this image? yes/no"
+ask-gemini --pro   -f dense-dashboard.png "list every chart and what it shows"
+ask-gemini-batch --flash -p "any obvious layout bug?" shots/*.png -j 8
+```
 
 ### Why it stays lean
 

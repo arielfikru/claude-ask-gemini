@@ -38,6 +38,17 @@ def _run(cmd, stdin=None):
     return f"{out}\n\n[{proc.stderr.strip()}]" if proc.stderr.strip() else out
 
 
+def _model_flags(model):
+    """Map a model keyword to CLI flags: 'flash'/'pro' shortcuts, else explicit -m."""
+    if model == "flash":
+        return ["--flash"]
+    if model == "pro":
+        return ["--pro"]
+    if model:
+        return ["-m", model]
+    return []
+
+
 @mcp.tool()
 def ask_gemini(
     prompt: str,
@@ -50,18 +61,17 @@ def ask_gemini(
 
     prompt: what to look for / answer. files: absolute paths to media (image,
       video, doc) to analyze — repeatable; Gemini sees only what you pass.
-      model: explicit Gemini model name (else default). consistency: N>1 samples
-      N and majority-votes the answer — ONLY useful for discrete answers
-      (counts, yes/no, OCR, classification), useless for open-ended description.
+      model: 'flash' (fast/cheap), 'pro' (most capable, default), or an explicit
+      Gemini model name. consistency: N>1 samples N and majority-votes the answer
+      — ONLY useful for discrete answers (counts, yes/no, OCR, classification),
+      useless for open-ended description.
       timeout: per-call seconds (0 = default 300; raise for long videos).
     NOT for image generation — Gemini CLI cannot generate AI images.
     Returns the answer; the trailing [..] line carries usage / agreement stats.
     """
-    cmd = [_cli("ask-gemini")]
+    cmd = [_cli("ask-gemini"), *_model_flags(model)]
     for f in files or []:
         cmd += ["-f", f]
-    if model:
-        cmd += ["-m", model]
     if consistency and consistency > 1:
         cmd += ["-c", str(consistency)]
     if timeout:
@@ -88,9 +98,7 @@ def ask_gemini_batch(
       each question asked about the same image/video.
     Returns JSON array of {index, label, output, ok}.
     """
-    cmd = [_cli("ask-gemini-batch"), "--json", "-j", str(jobs)]
-    if model:
-        cmd += ["-m", model]
+    cmd = [_cli("ask-gemini-batch"), "--json", "-j", str(jobs), *_model_flags(model)]
     if timeout:
         cmd += ["--timeout", str(timeout)]
     if files:

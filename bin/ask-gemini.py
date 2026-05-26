@@ -33,6 +33,10 @@ import tempfile
 
 DEFAULT_TIMEOUT = int(os.environ.get("GEMINI_TIMEOUT", "300"))
 
+# Model shortcuts. Pro = most capable (default); flash = faster/cheaper.
+MODEL_PRO = "gemini-3.1-pro-preview"
+MODEL_FLASH = "gemini-3-flash-preview"
+
 
 def die(msg, code):
     print(f"ask-gemini: {msg}", file=sys.stderr)
@@ -45,6 +49,10 @@ def parse_args():
     p.add_argument("--file", "-f", action="append", default=[],
                    help="media/file to analyze (image, video, doc); repeatable")
     p.add_argument("--model", "-m", help="explicit Gemini model name")
+    p.add_argument("--flash", action="store_true",
+                   help=f"shortcut for the fast/cheap model ({MODEL_FLASH})")
+    p.add_argument("--pro", action="store_true",
+                   help=f"shortcut for the most capable model ({MODEL_PRO})")
     p.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT,
                    help=f"seconds before giving up (default {DEFAULT_TIMEOUT}, env GEMINI_TIMEOUT)")
     p.add_argument("--consistency", "-c", type=int, metavar="N",
@@ -79,9 +87,20 @@ def resolve_files(paths):
     return out
 
 
+def resolve_model(args):
+    """Explicit -m wins, then --flash/--pro shortcuts, then env, else gemini default."""
+    if args.model:
+        return args.model
+    if args.flash:
+        return MODEL_FLASH
+    if args.pro:
+        return MODEL_PRO
+    return os.environ.get("GEMINI_MODEL")
+
+
 def build_cmd(args, prompt):
     cmd = ["gemini", "-p", prompt, "--skip-trust", "-o", "json"]
-    model = args.model or os.environ.get("GEMINI_MODEL")
+    model = resolve_model(args)
     if model:
         cmd += ["-m", model]
     return cmd

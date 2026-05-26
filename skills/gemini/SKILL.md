@@ -34,12 +34,33 @@ cat spec.md | ask-gemini -f mockup.png "does this mockup match the spec?"
 ask-gemini "explain the CAP theorem in 3 sentences"
 ```
 
-Flags: `-f FILE` (media to analyze; **repeatable** for multiple files), `-m MODEL`
-(override model), `-c N` (self-consistency: sample N, majority-vote — only for
-**discrete** answers: counts, yes/no, OCR, classification; useless for open-ended
-description), `--timeout N` (seconds, default 300, env `GEMINI_TIMEOUT`),
-`--raw` (full gemini JSON not just `.response`), `-q` (no stats). Prompt comes
-from args and/or piped stdin.
+Flags: `-f FILE` (media to analyze; **repeatable** for multiple files),
+`--flash` (fast/cheap model `gemini-3-flash-preview`), `--pro` (most capable
+`gemini-3.1-pro-preview`, the default), `-m MODEL` (explicit model name),
+`-c N` (self-consistency: sample N, majority-vote), `--timeout N` (seconds,
+default 300, env `GEMINI_TIMEOUT`), `--raw` (full gemini JSON not just
+`.response`), `-q` (no stats). Prompt comes from args and/or piped stdin.
+
+### Picking the model
+
+- Default (no flag) = pro: best for tricky reads (subtle UI bugs, dense
+  diagrams, fine detail). Use `--pro` to force it.
+- `--flash` for bulk / simple reads (obvious content, large batches) — faster
+  and cheaper. Good default for `ask-gemini-batch` over many files.
+
+### Self-consistency vote (`-c N`)
+
+`-c N` samples N times and majority-votes the answer. Use it when the
+**answer is a single short verifiable value AND being wrong is costly** (a
+number, name, yes/no, classification, picked option). Decision rule:
+
+- USE `-c` when: factual/numeric/categorical answer + you'd otherwise have to
+  trust it blind (no cheap way to verify). The `agreement X/N` line tells you
+  how much to trust it; `⚠ LOW` = don't.
+- SKIP `-c` when: output is prose/code/a draft (every sample differs, vote is
+  meaningless), OR you can verify the result yourself anyway (run it, check
+  the repo), OR cost matters more than the extra confidence. It is N× the
+  tokens — never the default.
 
 ```bash
 # discrete question -> vote reduces flaky/hallucinated answers

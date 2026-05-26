@@ -33,6 +33,8 @@ def parse_args():
     p.add_argument("--delimiter", "-d", help="split stdin prompts on this line (else one per line)")
     p.add_argument("--jobs", "-j", type=int, default=4, help="parallel workers (default 4)")
     p.add_argument("--model", "-m", help="explicit model for all calls")
+    p.add_argument("--flash", action="store_true", help="use the fast/cheap model for all")
+    p.add_argument("--pro", action="store_true", help="use the most capable model for all")
     p.add_argument("--timeout", type=int, help="per-call timeout seconds (env GEMINI_TIMEOUT)")
     p.add_argument("--json", action="store_true", help="emit JSON array of results")
     return p.parse_args()
@@ -56,6 +58,10 @@ def shared_flags(args, timeout):
     flags = ["-q", "--timeout", str(timeout)]
     if args.model:
         flags += ["-m", args.model]
+    elif args.flash:
+        flags.append("--flash")
+    elif args.pro:
+        flags.append("--pro")
     return flags
 
 
